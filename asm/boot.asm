@@ -5,7 +5,7 @@
 Setup:
 	;; Set video mode
 	mov ah, 0x0
-	mov al, 0x3
+	mov al, 0xE
 	int 0x10
 
 	;; Set background color
@@ -14,8 +14,12 @@ Setup:
 	mov bl, 9
 	int 0x10
 
-	mov si, hello_str
+	mov si, HELLO_STRING
 	call PrintString
+
+	mov [BOOT_DRIVE], dl
+	
+	call LoadKernel
 
 	jmp InfiniteLoop
 
@@ -27,6 +31,22 @@ PrintString:
 		cmp al, 0
 		je .return
 
+		cmp al, 10
+		jne .continue
+		
+		mov ah, 0x3
+		mov bh, 0
+		int 0x10
+
+		inc dh
+		mov dl, 0
+
+		mov ah, 0x2
+		mov bh, 0
+		int 0x10
+
+		jmp .loop
+	.continue:
 		;; Print character
 		mov ah, 0xE
 		mov bh, 0
@@ -50,12 +70,31 @@ PrintString:
 
 	.return:
 		ret
-		
+
+LoadKernel:
+	mov ah, 0x2
+	mov al, KERNEL_SIZE
+	mov ch, 1
+	mov dh, 1
+	mov dl, [BOOT_DRIVE]
+	mov bx, KERNEL_OFFSET
+	int 0x13
+	jc .error
+	jmp .end		
+.error:
+	mov si, ERROR_STRING
+	call PrintString
+.end:
+	ret
 
 InfiniteLoop:
 	jmp $
 
-hello_str: db "Hello, World!", 0
+HELLO_STRING: db "Welcome to HagerOS!", 10, 0
+ERROR_STRING: db "Could not load Kernel.", 10, 0
+KERNEL_OFFSET: equ 0x1000
+KERNEL_SIZE: equ 100
+BOOT_DRIVE: db 0
 
 times 510 - ($ - $$) db 0
 db 0x55
