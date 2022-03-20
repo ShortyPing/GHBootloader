@@ -90,7 +90,9 @@ LoadKernel:
 InfiniteLoop:
 	jmp $
 
-HELLO_STRING: db "Welcome to HagerOS!", 10, 0
+%include "asm/gdt.asm"
+
+HELLO_STRING: db "Welcome to HydrogenOS!", 10, 0
 ERROR_STRING: db "Could not load Kernel.", 10, 0
 KERNEL_OFFSET: equ 0x1000
 KERNEL_SIZE: equ 100
@@ -99,4 +101,3 @@ BOOT_DRIVE: db 0
 times 510 - ($ - $$) db 0
 db 0x55
 db 0xAA
-
