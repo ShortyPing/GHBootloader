@@ -127,5 +127,3 @@ BOOT_DRIVE: db 0
 times 510 - ($ - $$) db 0
 db 0x55
 db 0xAA
-
-times 512 * 100 db 0
