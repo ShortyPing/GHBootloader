@@ -5,7 +5,7 @@
 Setup:
 	;; Set video mode
 	mov ah, 0x0
-	mov al, 0xE
+	mov al, 0x10
 	int 0x10
 
 	;; Set background color
@@ -46,24 +46,15 @@ PrintString:
 		int 0x10
 
 		jmp .loop
+
 	.continue:
 		;; Print character
+		;; Cursor advances after writing. Hence no additional
+		;; manipulation is necessary.
+
 		mov ah, 0xE
 		mov bh, 0
 		mov bl, 0xF
-		int 0x10
-
-		;; Get cursor position (Column in DL)
-		mov ah, 0x3
-		mov bh, 0
-		int 0x10
-
-		;; Increment column
-		inc dl
-
-		;; Set new cursor position
-		mov ah, 0x2
-		mov bh, 0
 		int 0x10
 		
 		jmp .loop
@@ -93,7 +84,7 @@ InfiniteLoop:
 %include "asm/gdt.asm"
 
 HELLO_STRING: db "Welcome to HydrogenOS!", 10, 0
-ERROR_STRING: db "Could not load Kernel.", 10, 0
+ERROR_STRING: db ">> Could not load Kernel <<", 10, 0
 KERNEL_OFFSET: equ 0x1000
 KERNEL_SIZE: equ 100
 BOOT_DRIVE: db 0
@@ -101,3 +92,5 @@ BOOT_DRIVE: db 0
 times 510 - ($ - $$) db 0
 db 0x55
 db 0xAA
+
+times 512 * 100 db 0
