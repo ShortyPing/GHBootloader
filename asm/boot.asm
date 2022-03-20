@@ -117,6 +117,13 @@ InfiniteLoop:					;; \   Just an unescapable infinite loop.
 
 %include "asm/gdt.asm"
 
+LoadGDT:
+	lgdt [GDTDescriptor]
+	ret
+	
+PMSwtich:
+	ret
+
 HELLO_STRING:	string "Welcome to HydrogenOS!"
 KERN_LOAD_ERR:	string ">> Could not load Kernel <<"
 KERN_LOAD_SUCC:	string "Success loading Kernel."
