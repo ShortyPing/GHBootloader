@@ -1,23 +1,28 @@
-;; The global descriptor table structure
-
 GDTStart:
-GDTNull:            resb 8
-GDTCodeSegment:     dw 0xFFFF
-                    dw 0x0
-                    db 0x0
-                    db 11111110b
-                    db 11110100b
-                    db 0x0
-GDTDataSegment:     dw 0xFFFF
-                    dw 0x0
-                    db 0x0
-                    db 11110010b
-                    db 11110100b
-                    db 0x0
-GDTEnd:
+    dq 0x0          ; null descriptor
+    GDTCodeDescriptor:
+        dw 0xFFFF
+        dw 0x0
+        db 0x0
+        db 10011110b
+        db 11110100b
+        db 0x0
 
-GDTDescriptor:      dw GDTEnd - GDTStart - 1
-                    dq GDTStart
+    GDTDataDescriptor:
+        dw 0xFFFF
+        dw 0x0
+        db 0x0
+        db 10010110b
+        db 11110100b
+        db 0x0
+    GDTEnd:
 
-GDTCodeSelector:    equ GDTCodeSegment - GDTStart
-GDTDataSelector:    equ GDTDataSegment - GDTStart
+    GDTDescriptor:
+        dw GDTEnd - GDTStart - 1
+        dd GDTStart
+
+CODE_SEG: equ GDTCodeDescriptor - GDTStart
+DATA_SEG: equ GDTDataDescriptor - GDTStart
+
+
+        

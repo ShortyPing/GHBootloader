@@ -6,6 +6,14 @@
 	db %1, 10, 0
 %endmacro
 
+%macro str_err 1
+	db "(Error) ", %1, 10, 0
+%endmacro
+
+%macro str_info 1
+	db "(Info) ", %1, 10, 0
+%endmacro
+
 ;; Define a null-terminated string with NO line feed.
 %macro string_nolf 1
 	db %1, 0
@@ -23,10 +31,17 @@ resb 40
 Setup:
 	mov [BOOT_DRIVE], dl
 
+	xor ax, ax
+	mov ds, ax
+	mov gs, ax
+	mov fs, ax
+	mov es, ax
+	mov ss, ax
+	mov bp, ss
+	mov sp, bp
+
 	;; Set video mode
-	mov ah, 0x0
-	mov al, 0x10
-	int 0x10
+	call SetVideoMode
 
 	;; Set background color
 	mov ah, 0xB
@@ -40,9 +55,18 @@ Setup:
 	
 	;; Load the kernel into memory
 	call LoadKernel
+	mov si, SWITCH_PROT
+	call PrintString
+	jmp PMSwitch
 
-	;; Enter an infinite loop
-	jmp InfiniteLoop
+SetVideoMode:
+	mov ah, 0x0
+	mov al, 0x3
+	int 0x10
+	ret
+
+ClearScreen:
+	call SetVideoMode
 
 PrintString:
 	jmp .loop
@@ -117,20 +141,77 @@ InfiniteLoop:					;; \   Just an unescapable infinite loop.
 
 %include "asm/gdt.asm"
 
-LoadGDT:
-	lgdt [GDTDescriptor]
-	ret
+PMSwitch:
+	call SetVideoMode
+	cli 				; disable all interrupts
+	lgdt [GDTDescriptor] 		; load global descriptor table
+	mov eax, cr0
+	or eax, 1
+	mov cr0, eax
+	jmp CODE_SEG:SetupProtectedMode
 	
-PMSwtich:
-	ret
 
-HELLO_STRING:	string "Welcome to HydrogenOS!"
-KERN_LOAD_ERR:	string ">> Could not load Kernel <<"
-KERN_LOAD_SUCC:	string "Success loading Kernel."
+; CONSTANTS
 
+HELLO_STRING:	str_info "Welcome to HydrogenOS!"
+KERN_LOAD_ERR:	str_err "Could not load Kernel <<"
+KERN_LOAD_SUCC:	str_info "Success loading Kernel."
+SWITCH_PROT: str_info "Switching to protected mode..."
 KERNEL_OFFSET: equ 0x1000
 BOOT_DRIVE: db 0
+PM_STACK: equ 0x2000
+
+[bits 32]
+
+
+;; eax - Text buffer address (Don't touch, because I will kill you)
+;; bl - Character
+PrintNewCharacter:
+	mov [eax], bl
+	inc eax
+	mov byte [eax], 0x0f
+	inc eax
+	ret
+
+SetupProtectedMode:
+
+	mov ax, DATA_SEG
+	mov ds, ax
+	mov gs, ax
+	mov fs, ax
+	mov es, ax
+	mov ss, ax
+	mov esp, PM_STACK
+	mov ebp, ebp
+	
+	mov eax, 0xB8000
+
+	mov bl, 'H'
+	call PrintNewCharacter
+	mov bl, 'E'
+	call PrintNewCharacter
+	mov bl, 'L'
+	call PrintNewCharacter
+	mov bl, 'L'
+	call PrintNewCharacter
+	mov bl, 'O'
+	call PrintNewCharacter
+	mov bl, ' '
+	call PrintNewCharacter
+	mov bl, 'W'
+	call PrintNewCharacter
+	mov bl, 'O'
+	call PrintNewCharacter
+	mov bl, 'R'
+	call PrintNewCharacter
+	mov bl, 'L'
+	call PrintNewCharacter
+	mov bl, 'D'
+	call PrintNewCharacter
+	jmp $
+
 
 times 510 - ($ - $$) db 0
 db 0x55
 db 0xAA
+
